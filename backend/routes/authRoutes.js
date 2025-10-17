@@ -4,6 +4,8 @@ const { body } = require('express-validator');
 const {
   register,
   login,
+  verifyOTP,
+  resendOTP,
   getMe,
   updateProfile
 } = require('../controllers/authController');
@@ -26,6 +28,8 @@ const loginValidation = [
 // Public routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
 
 // Protected routes
 router.get('/me', protect, getMe);

@@ -10,12 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { authAPI } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-const OTPScreen = ({ onVerify, onResend, email }) => {
+const OTPScreen = ({ onVerify, email }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const inputRefs = useRef([]);
 
   const handleOtpChange = (text, index) => {
@@ -39,16 +44,60 @@ const OTPScreen = ({ onVerify, onResend, email }) => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otpCode = otp.join('');
-    console.log('Verifying OTP:', otpCode);
-    onVerify(otpCode);
+    
+    if (otpCode.length !== 6) {
+      Alert.alert('Error', 'Please enter complete OTP');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authAPI.verifyOTP(email, otpCode);
+      
+      if (response.success) {
+        Alert.alert(
+          'Success', 
+          'Email verified successfully! You can now login with your credentials.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Pass user data and token to parent
+                if (onVerify) {
+                  onVerify(response.data);
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Verification Failed', error.message || 'Invalid or expired OTP');
+      // Clear OTP on error
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
-    setOtp(['', '', '', '', '', '']);
-    inputRefs.current[0]?.focus();
-    onResend();
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const response = await authAPI.resendOTP(email);
+      
+      if (response.success) {
+        Alert.alert('Success', 'OTP resent successfully! Check your email.');
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -91,18 +140,24 @@ const OTPScreen = ({ onVerify, onResend, email }) => {
           <TouchableOpacity 
             style={[
               styles.verifyButton,
-              otp.every(d => d) ? null : styles.verifyButtonDisabled
+              (!otp.every(d => d) || loading) && styles.verifyButtonDisabled
             ]} 
             onPress={handleVerify}
-            disabled={!otp.every(d => d)}
+            disabled={!otp.every(d => d) || loading}
           >
-            <Text style={styles.verifyButtonText}>VERIFY</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.verifyButtonText}>VERIFY</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.resendContainer}>
             <Text style={styles.resendText}>Didn't receive the code? </Text>
-            <TouchableOpacity onPress={handleResend}>
-              <Text style={styles.resendLink}>Resend Code</Text>
+            <TouchableOpacity onPress={handleResend} disabled={resending}>
+              <Text style={[styles.resendLink, resending && styles.resendLinkDisabled]}>
+                {resending ? 'Resending...' : 'Resend Code'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -203,6 +258,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#6B9AC4',
     fontWeight: '600',
+  },
+  resendLinkDisabled: {
+    color: '#D0D0D0',
   },
 });
 

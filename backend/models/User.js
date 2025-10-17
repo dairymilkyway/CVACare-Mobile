@@ -25,34 +25,19 @@ const userSchema = new mongoose.Schema({
     minlength: [6, 'Password must be at least 6 characters'],
     select: false // Don't include password in queries by default
   },
-  role: {
-    type: String,
-    enum: ['user', 'admin', 'doctor'],
-    default: 'user'
-  },
-  phoneNumber: {
-    type: String,
-    trim: true
-  },
-  dateOfBirth: {
-    type: Date
-  },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: String
-  },
-  isActive: {
+  isVerified: {
     type: Boolean,
-    default: true
+    default: false
+  },
+  otp: {
+    type: String,
+    select: false
+  },
+  otpExpiry: {
+    type: Date,
+    select: false
   },
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }
@@ -71,12 +56,6 @@ userSchema.pre('save', async function(next) {
   } catch (error) {
     next(error);
   }
-});
-
-// Update the updatedAt field before saving
-userSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
 });
 
 // Method to compare passwords

@@ -11,17 +11,40 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { authAPI } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = ({ onRegister }) => {
+const LoginScreen = ({ onRegister, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Handle login logic here
-    console.log('Login pressed', { email, password });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authAPI.login({ email, password });
+      
+      if (response.success) {
+        Alert.alert('Success', 'Login successful!');
+        // Store token and user data (implement AsyncStorage later)
+        if (onLoginSuccess) {
+          onLoginSuccess(response.data);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Login Failed', error.message || 'Invalid credentials');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,8 +86,16 @@ const LoginScreen = ({ onRegister }) => {
               autoCapitalize="none"
             />
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>LOGIN</Text>
+            <TouchableOpacity 
+              style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.loginButtonText}>LOGIN</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.registerContainer}>
@@ -124,6 +155,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#D0D0D0',
   },
   loginButtonText: {
     color: '#FFFFFF',

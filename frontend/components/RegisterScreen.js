@@ -11,7 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { authAPI } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,13 +23,62 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    // Handle registration logic here
-    console.log('Register pressed', { fullName, email, password, confirmPassword });
-    // After successful registration, navigate to OTP screen
-    if (onRegisterSuccess) {
-      onRegisterSuccess(email);
+  const handleRegister = async () => {
+    // Validation
+    if (!fullName || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('Attempting registration with:', { name: fullName, email });
+      
+      const response = await authAPI.register({
+        name: fullName,
+        email,
+        password,
+      });
+
+      console.log('Registration response:', response);
+
+      if (response.success) {
+        Alert.alert(
+          'Success', 
+          'Registration successful! Please check your email for OTP.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to OTP screen
+                if (onRegisterSuccess) {
+                  onRegisterSuccess(email);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Registration Failed', response.message || 'An error occurred');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      const errorMessage = error?.message || error?.error || 'An error occurred. Please try again.';
+      Alert.alert('Registration Failed', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,8 +142,16 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess }) => {
               autoCapitalize="none"
             />
 
-            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-              <Text style={styles.registerButtonText}>REGISTER</Text>
+            <TouchableOpacity 
+              style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.registerButtonText}>REGISTER</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
@@ -157,6 +217,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
+  },
+  registerButtonDisabled: {
+    backgroundColor: '#D0D0D0',
   },
   registerButtonText: {
     color: '#FFFFFF',

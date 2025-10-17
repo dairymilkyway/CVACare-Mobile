@@ -60,15 +60,20 @@ export default function App() {
     setShowOTP(true);
   };
 
-  const handleVerifyOTP = (otpCode) => {
-    console.log('OTP Verified:', otpCode);
-    // Navigate to main app after verification
+  const handleVerifyOTP = (userData) => {
+    console.log('OTP Verified, user data:', userData);
+    // Store user data and token (implement AsyncStorage later)
+    // Redirect to login screen after successful verification
     setShowOTP(false);
+    setShowLogin(true);
   };
 
-  const handleResendOTP = () => {
-    console.log('Resending OTP to:', userEmail);
-    // Implement resend OTP logic here
+  const handleLoginSuccess = (userData) => {
+    console.log('Login successful, user data:', userData);
+    // Store user data and token
+    // Navigate to main app
+    setShowLogin(false);
+    // You can navigate to home screen here
   };
 
   if (!appIsReady || showSplash) {
@@ -87,7 +92,10 @@ export default function App() {
   if (showLogin) {
     return (
       <>
-        <LoginScreen onRegister={handleRegister} />
+        <LoginScreen 
+          onRegister={handleRegister}
+          onLoginSuccess={handleLoginSuccess}
+        />
         <StatusBar style="auto" />
       </>
     );
@@ -111,7 +119,6 @@ export default function App() {
         <OTPScreen 
           email={userEmail}
           onVerify={handleVerifyOTP}
-          onResend={handleResendOTP}
         />
         <StatusBar style="auto" />
       </>
