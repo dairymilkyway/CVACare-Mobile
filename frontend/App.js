@@ -1,20 +1,127 @@
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import * as SplashScreenExpo from 'expo-splash-screen';
+import SplashScreen from './components/SplashScreen';
+import LandingPage from './components/LandingPage';
+import LoginScreen from './components/LoginScreen';
+import RegisterScreen from './components/RegisterScreen';
+import OTPScreen from './components/OTPScreen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreenExpo.preventAutoHideAsync();
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [appIsReady, setAppIsReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Pre-load fonts, make any API calls you need to do here
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+        await SplashScreenExpo.hideAsync();
+      }
+    }
+
+    prepare();
+  }, []);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
+  const handleGetStarted = () => {
+    setShowLanding(false);
+    setShowLogin(true);
+  };
+
+  const handleRegister = () => {
+    setShowLogin(false);
+    setShowRegister(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowRegister(false);
+    setShowLogin(true);
+  };
+
+  const handleRegisterSubmit = (email) => {
+    setUserEmail(email);
+    setShowRegister(false);
+    setShowOTP(true);
+  };
+
+  const handleVerifyOTP = (otpCode) => {
+    console.log('OTP Verified:', otpCode);
+    // Navigate to main app after verification
+    setShowOTP(false);
+  };
+
+  const handleResendOTP = () => {
+    console.log('Resending OTP to:', userEmail);
+    // Implement resend OTP logic here
+  };
+
+  if (!appIsReady || showSplash) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
+
+  if (showLanding) {
+    return (
+      <>
+        <LandingPage onGetStarted={handleGetStarted} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (showLogin) {
+    return (
+      <>
+        <LoginScreen onRegister={handleRegister} />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (showRegister) {
+    return (
+      <>
+        <RegisterScreen 
+          onLogin={handleBackToLogin}
+          onRegisterSuccess={handleRegisterSubmit}
+        />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (showOTP) {
+    return (
+      <>
+        <OTPScreen 
+          email={userEmail}
+          onVerify={handleVerifyOTP}
+          onResend={handleResendOTP}
+        />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <>
+      {/* Main app content will go here */}
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
