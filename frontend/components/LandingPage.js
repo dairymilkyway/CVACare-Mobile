@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Text,
   SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -56,6 +58,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerContainer: {
     flexDirection: 'row',

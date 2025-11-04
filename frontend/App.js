@@ -6,6 +6,7 @@ import LandingPage from './components/LandingPage';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import OTPScreen from './components/OTPScreen';
+import HomePage from './components/HomePage';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreenExpo.preventAutoHideAsync();
@@ -16,7 +17,9 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
+  const [showHome, setShowHome] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userData, setUserData] = useState(null);
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
@@ -68,12 +71,12 @@ export default function App() {
     setShowLogin(true);
   };
 
-  const handleLoginSuccess = (userData) => {
-    console.log('Login successful, user data:', userData);
+  const handleLoginSuccess = (data) => {
+    console.log('Login successful, user data:', data);
     // Store user data and token
-    // Navigate to main app
+    setUserData(data);
     setShowLogin(false);
-    // You can navigate to home screen here
+    setShowHome(true);
   };
 
   if (!appIsReady || showSplash) {
@@ -120,6 +123,15 @@ export default function App() {
           email={userEmail}
           onVerify={handleVerifyOTP}
         />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
+  if (showHome) {
+    return (
+      <>
+        <HomePage userData={userData} />
         <StatusBar style="auto" />
       </>
     );
