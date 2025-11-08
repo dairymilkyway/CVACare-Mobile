@@ -7,6 +7,7 @@ import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import OTPScreen from './components/OTPScreen';
 import HomePage from './components/HomePage';
+import './config/firebase'; // Initialize Google Sign-In configuration
 
 // Keep the splash screen visible while we fetch resources
 SplashScreenExpo.preventAutoHideAsync();

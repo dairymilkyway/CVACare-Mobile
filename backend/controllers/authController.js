@@ -4,6 +4,7 @@ const { validationResult } = require('express-validator');
 const { generateOTP, generateOTPExpiry, verifyOTP } = require('../utils/otpService');
 const { sendOTPEmail } = require('../utils/emailService');
 const { OAuth2Client } = require('google-auth-library');
+const { createOrUpdateFirebaseUser } = require('../config/firebaseAdmin');
 
 // Initialize Google OAuth client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '292803901437-fk6kg98k8gj8e61k39osqlvf03cq3aer.apps.googleusercontent.com');
@@ -159,6 +160,15 @@ exports.verifyOTP = async (req, res) => {
     user.otpExpiry = undefined;
     await user.save();
     console.log('✅ User verified and OTP cleared');
+
+    // Sync to Firebase Authentication
+    await createOrUpdateFirebaseUser({
+      uid: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      isVerified: user.isVerified
+    });
 
     res.status(200).json({
       success: true,
@@ -438,6 +448,15 @@ exports.googleAuth = async (req, res) => {
         await user.save();
         console.log('✅ Updated user with Google info');
       }
+
+      // Sync to Firebase Authentication
+      await createOrUpdateFirebaseUser({
+        uid: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        isVerified: user.isVerified
+      });
     } else {
       console.log('📝 Creating new user with Google info...');
       
@@ -452,6 +471,15 @@ exports.googleAuth = async (req, res) => {
       });
       
       console.log('✅ New user created:', user._id);
+
+      // Sync to Firebase Authentication
+      await createOrUpdateFirebaseUser({
+        uid: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        isVerified: user.isVerified
+      });
     }
 
     // Generate JWT token
