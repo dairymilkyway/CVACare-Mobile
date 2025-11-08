@@ -3,6 +3,10 @@ const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const { generateOTP, generateOTPExpiry, verifyOTP } = require('../utils/otpService');
 const { sendOTPEmail } = require('../utils/emailService');
+const { OAuth2Client } = require('google-auth-library');
+
+// Initialize Google OAuth client
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '292803901437-fk6kg98k8gj8e61k39osqlvf03cq3aer.apps.googleusercontent.com');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -375,4 +379,105 @@ exports.updateProfile = async (req, res) => {
       message: error.message
     });
   }
+};
+
+// @desc    Google Sign In / Sign Up
+// @route   POST /api/auth/google
+// @access  Public
+exports.googleAuth = async (req, res) => {
+  console.log('\n=== GOOGLE AUTH REQUEST STARTED ===');
+  console.log('Request Body:', JSON.stringify(req.body, null, 2));
+
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      console.log('❌ No ID token provided');
+      return res.status(400).json({
+        success: false,
+        message: 'ID token is required'
+      });
+    }
+
+    // Verify the Google ID token
+    console.log('🔐 Verifying Google ID token...');
+    let ticket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID || '292803901437-fk6kg98k8gj8e61k39osqlvf03cq3aer.apps.googleusercontent.com',
+      });
+    } catch (verifyError) {
+      console.log('❌ Google token verification failed:', verifyError.message);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google token'
+      });
+    }
+
+    const payload = ticket.getPayload();
+    console.log('✅ Google token verified. User info:', {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture
+    });
+
+    const { email, name, picture, sub: googleId } = payload;
+
+    // Check if user already exists
+    console.log('🔍 Checking if user exists with email:', email);
+    let user = await User.findOne({ email });
+
+    if (user) {
+      console.log('✅ User found, logging in...');
+      
+      // Update Google ID and picture if not set
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.picture = picture;
+        await user.save();
+        console.log('✅ Updated user with Google info');
+      }
+    } else {
+      console.log('📝 Creating new user with Google info...');
+      
+      // Create new user
+      user = await User.create({
+        name,
+        email,
+        googleId,
+        picture,
+        isVerified: true, // Google accounts are pre-verified
+        password: Math.random().toString(36).slice(-8) + 'Aa1!' // Random password (won't be used for Google login)
+      });
+      
+      console.log('✅ New user created:', user._id);
+    }
+
+    // Generate JWT token
+    console.log('🔑 Generating JWT token...');
+    const token = generateToken(user._id);
+
+    console.log('✅ Google authentication successful');
+    res.status(200).json({
+      success: true,
+      message: user.googleId ? 'Login successful' : 'Account created successfully',
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        isVerified: user.isVerified,
+        token: token
+      }
+    });
+  } catch (error) {
+    console.error('❌ GOOGLE AUTH ERROR:', error);
+    console.error('Error Stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Google authentication failed'
+    });
+  }
+  console.log('=== GOOGLE AUTH REQUEST ENDED ===\n');
 };

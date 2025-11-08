@@ -7,7 +7,8 @@ const {
   verifyOTP,
   resendOTP,
   getMe,
-  updateProfile
+  updateProfile,
+  googleAuth
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -30,6 +31,7 @@ router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/verify-otp', verifyOTP);
 router.post('/resend-otp', resendOTP);
+router.post('/google', googleAuth);
 
 // Protected routes
 router.get('/me', protect, getMe);

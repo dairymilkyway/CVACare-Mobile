@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema({
     type: Date,
     select: false
   },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null values and only enforces uniqueness when value exists
+  },
+  picture: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Image,
@@ -14,7 +14,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authAPI } from '../services/api';
+import '../config/firebase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,6 +25,7 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -44,6 +48,52 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      
+      // Sign in with Google
+      const userInfo = await GoogleSignin.signIn();
+      
+      // Get the ID token
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+      
+      if (!idToken) {
+        throw new Error('No ID token received from Google');
+      }
+
+      // Send ID token to backend
+      const response = await authAPI.googleSignIn(idToken);
+      
+      if (response.success) {
+        Alert.alert('Success', 'Google Sign-In successful!');
+        if (onLoginSuccess) {
+          onLoginSuccess(response.data);
+        }
+      }
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      
+      if (error.code === 'SIGN_IN_CANCELLED') {
+        // User cancelled the login flow
+        Alert.alert('Cancelled', 'Google Sign-In was cancelled');
+      } else if (error.code === 'IN_PROGRESS') {
+        // Operation (e.g. sign in) is in progress already
+        Alert.alert('In Progress', 'Sign-In is already in progress');
+      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+        // Play services not available or outdated
+        Alert.alert('Error', 'Google Play Services not available');
+      } else {
+        // Some other error happened
+        Alert.alert('Error', error.message || 'Google Sign-In failed');
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -95,6 +145,27 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.loginButtonText}>LOGIN</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.googleButton, googleLoading && styles.googleButtonDisabled]} 
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#4285F4" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={24} color="#4285F4" style={styles.googleIcon} />
+                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
+                </>
               )}
             </TouchableOpacity>
 
@@ -178,6 +249,45 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: 15,
     color: '#6B9AC4',
+    fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#D0D0D0',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  googleButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#4285F4',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    flexDirection: 'row',
+  },
+  googleButtonDisabled: {
+    backgroundColor: '#F0F0F0',
+    borderColor: '#D0D0D0',
+  },
+  googleIcon: {
+    marginRight: 10,
+  },
+  googleButtonText: {
+    color: '#4285F4',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

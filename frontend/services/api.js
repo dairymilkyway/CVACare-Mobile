@@ -78,6 +78,16 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Google Sign In
+  googleSignIn: async (idToken) => {
+    try {
+      const response = await api.post('/auth/google', { idToken });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default api;
