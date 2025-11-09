@@ -13,12 +13,14 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import TherapyScreen from './TherapyScreen';
 
 const { width, height } = Dimensions.get('window');
 
 const HomePage = ({ userData }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('home');
+  const [showTherapy, setShowTherapy] = useState(false);
   const scrollViewRef = useRef(null);
 
   // Placeholder carousel data
@@ -41,8 +43,29 @@ const HomePage = ({ userData }) => {
   const handleTabPress = (tab) => {
     setActiveTab(tab);
     console.log('Tab pressed:', tab);
-    // Navigate to different screens based on tab
+    
+    if (tab === 'therapy') {
+      setShowTherapy(true);
+    } else {
+      setShowTherapy(false);
+      // Navigate to different screens based on tab
+    }
   };
+
+  const handleTherapyBack = () => {
+    setShowTherapy(false);
+    setActiveTab('home');
+  };
+
+  const handleTherapyCardPress = () => {
+    setActiveTab('therapy');
+    setShowTherapy(true);
+  };
+
+  // Show Therapy screen if therapy tab is active
+  if (showTherapy) {
+    return <TherapyScreen onBack={handleTherapyBack} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -109,13 +132,16 @@ const HomePage = ({ userData }) => {
               <Ionicons name="medical" size={32} color="#C9302C" />
               <Text style={styles.quickActionText}>Medical Records</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="chatbubbles" size={32} color="#C9302C" />
-              <Text style={styles.quickActionText}>Messages</Text>
+            <TouchableOpacity 
+              style={styles.quickActionCard}
+              onPress={handleTherapyCardPress}
+            >
+              <Ionicons name="fitness" size={32} color="#C9302C" />
+              <Text style={styles.quickActionText}>Therapy</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickActionCard}>
-              <Ionicons name="document-text" size={32} color="#C9302C" />
-              <Text style={styles.quickActionText}>Prescriptions</Text>
+              <Ionicons name="heart" size={32} color="#C9302C" />
+              <Text style={styles.quickActionText}>Health</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -150,15 +176,15 @@ const HomePage = ({ userData }) => {
 
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => handleTabPress('appointments')}
+          onPress={() => handleTabPress('therapy')}
         >
           <Ionicons 
-            name={activeTab === 'appointments' ? 'calendar' : 'calendar-outline'} 
+            name={activeTab === 'therapy' ? 'fitness' : 'fitness-outline'} 
             size={28} 
-            color={activeTab === 'appointments' ? '#C9302C' : '#666'} 
+            color={activeTab === 'therapy' ? '#C9302C' : '#666'} 
           />
-          <Text style={[styles.navText, activeTab === 'appointments' && styles.navTextActive]}>
-            Appointments
+          <Text style={[styles.navText, activeTab === 'therapy' && styles.navTextActive]}>
+            Therapy
           </Text>
         </TouchableOpacity>
 
@@ -173,20 +199,6 @@ const HomePage = ({ userData }) => {
           />
           <Text style={[styles.navText, activeTab === 'health' && styles.navTextActive]}>
             Health
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleTabPress('messages')}
-        >
-          <Ionicons 
-            name={activeTab === 'messages' ? 'chatbubbles' : 'chatbubbles-outline'} 
-            size={28} 
-            color={activeTab === 'messages' ? '#C9302C' : '#666'} 
-          />
-          <Text style={[styles.navText, activeTab === 'messages' && styles.navTextActive]}>
-            Messages
           </Text>
         </TouchableOpacity>
 
