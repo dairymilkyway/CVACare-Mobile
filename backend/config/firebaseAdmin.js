@@ -57,7 +57,7 @@ async function createOrUpdateFirebaseUser(userData) {
   }
 
   try {
-    const { uid, email, name, picture, isVerified } = userData;
+    const { uid, email, name, picture, isVerified, googleId } = userData;
 
     // Try to update existing user first
     try {
@@ -68,21 +68,64 @@ async function createOrUpdateFirebaseUser(userData) {
         emailVerified: isVerified || false
       });
       
+      // Update last sign-in time (Firebase doesn't do this automatically for Admin SDK)
+      // We'll use a custom claim to track it
+      const currentClaims = userRecord.customClaims || {};
+      await admin.auth().setCustomUserClaims(uid, {
+        ...currentClaims,
+        lastSignIn: new Date().getTime()
+      });
+      
       console.log('✅ Updated Firebase Auth user:', email);
       return userRecord;
     } catch (updateError) {
       // User doesn't exist, create new one
       if (updateError.code === 'auth/user-not-found') {
-        const userRecord = await admin.auth().createUser({
-          uid: uid,
-          email: email,
-          displayName: name,
-          photoURL: picture || null,
-          emailVerified: isVerified || false
-        });
-        
-        console.log('✅ Created Firebase Auth user:', email);
-        return userRecord;
+        // If it's a Google user, import with provider data
+        if (googleId) {
+          const importResult = await admin.auth().importUsers([
+            {
+              uid: uid,
+              email: email,
+              displayName: name,
+              photoURL: picture || null,
+              emailVerified: isVerified || false,
+              metadata: {
+                lastSignInTime: new Date().toUTCString(),
+                creationTime: new Date().toUTCString()
+              },
+              providerData: [
+                {
+                  uid: googleId,
+                  email: email,
+                  displayName: name,
+                  photoURL: picture || null,
+                  providerId: 'google.com'
+                }
+              ]
+            }
+          ]);
+          
+          if (importResult.errors.length > 0) {
+            throw new Error('Failed to import Google user: ' + importResult.errors[0].error.message);
+          }
+          
+          console.log('✅ Created Firebase Auth user with Google provider:', email);
+          const userRecord = await admin.auth().getUser(uid);
+          return userRecord;
+        } else {
+          // Regular email/password user
+          const userRecord = await admin.auth().createUser({
+            uid: uid,
+            email: email,
+            displayName: name,
+            photoURL: picture || null,
+            emailVerified: isVerified || false
+          });
+          
+          console.log('✅ Created Firebase Auth user:', email);
+          return userRecord;
+        }
       } else {
         throw updateError;
       }

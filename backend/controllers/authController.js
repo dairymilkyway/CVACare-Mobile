@@ -455,7 +455,8 @@ exports.googleAuth = async (req, res) => {
         email: user.email,
         name: user.name,
         picture: user.picture,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        googleId: user.googleId
       });
     } else {
       console.log('📝 Creating new user with Google info...');
@@ -478,7 +479,8 @@ exports.googleAuth = async (req, res) => {
         email: user.email,
         name: user.name,
         picture: user.picture,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        googleId: user.googleId
       });
     }
 
