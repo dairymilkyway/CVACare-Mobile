@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TherapyScreen from './TherapyScreen';
+import BottomNav from './BottomNav';
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,6 +58,12 @@ const HomePage = ({ userData }) => {
     setActiveTab('home');
   };
 
+  const handleNavigateFromTherapy = (destination) => {
+    setShowTherapy(false);
+    setActiveTab(destination);
+    // Handle navigation to other screens
+  };
+
   const handleTherapyCardPress = () => {
     setActiveTab('therapy');
     setShowTherapy(true);
@@ -64,7 +71,7 @@ const HomePage = ({ userData }) => {
 
   // Show Therapy screen if therapy tab is active
   if (showTherapy) {
-    return <TherapyScreen onBack={handleTherapyBack} />;
+    return <TherapyScreen onBack={handleTherapyBack} onNavigate={handleNavigateFromTherapy} />;
   }
 
   return (
@@ -159,63 +166,7 @@ const HomePage = ({ userData }) => {
       </ScrollView>
 
       {/* Bottom Navbar */}
-      <View style={styles.bottomNavbar}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleTabPress('home')}
-        >
-          <Ionicons 
-            name={activeTab === 'home' ? 'home' : 'home-outline'} 
-            size={28} 
-            color={activeTab === 'home' ? '#C9302C' : '#666'} 
-          />
-          <Text style={[styles.navText, activeTab === 'home' && styles.navTextActive]}>
-            Home
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleTabPress('therapy')}
-        >
-          <Ionicons 
-            name={activeTab === 'therapy' ? 'fitness' : 'fitness-outline'} 
-            size={28} 
-            color={activeTab === 'therapy' ? '#C9302C' : '#666'} 
-          />
-          <Text style={[styles.navText, activeTab === 'therapy' && styles.navTextActive]}>
-            Therapy
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleTabPress('health')}
-        >
-          <Ionicons 
-            name={activeTab === 'health' ? 'heart' : 'heart-outline'} 
-            size={28} 
-            color={activeTab === 'health' ? '#C9302C' : '#666'} 
-          />
-          <Text style={[styles.navText, activeTab === 'health' && styles.navTextActive]}>
-            Health
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleTabPress('profile')}
-        >
-          <Ionicons 
-            name={activeTab === 'profile' ? 'person' : 'person-outline'} 
-            size={28} 
-            color={activeTab === 'profile' ? '#C9302C' : '#666'} 
-          />
-          <Text style={[styles.navText, activeTab === 'profile' && styles.navTextActive]}>
-            Profile
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNav activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
 };
@@ -369,37 +320,6 @@ const styles = StyleSheet.create({
   activitySubtext: {
     fontSize: 14,
     color: '#999',
-  },
-
-  // Bottom Navbar Styles
-  bottomNavbar: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingVertical: 8,
-    paddingBottom: 10,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 5,
-  },
-  navText: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  navTextActive: {
-    color: '#C9302C',
-    fontWeight: '700',
   },
 
   // Bottom Spacing

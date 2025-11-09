@@ -10,19 +10,26 @@ import {
   Image,
   Platform,
   StatusBar,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import PhysicalTherapyScreen from './therapy/PhysicalTherapyScreen';
+import SpeechTherapyScreen from './therapy/SpeechTherapyScreen';
+import BottomNav from './BottomNav';
 
 const { width, height } = Dimensions.get('window');
 
-const TherapyScreen = ({ onBack }) => {
+const TherapyScreen = ({ onBack, onNavigate }) => {
   const [selectedTherapy, setSelectedTherapy] = useState(null);
+  const [activeTab, setActiveTab] = useState('therapy');
+  const [showPhysicalTherapy, setShowPhysicalTherapy] = useState(false);
+  const [showSpeechTherapy, setShowSpeechTherapy] = useState(false);
 
   const therapyTypes = [
     {
       id: 1,
       name: 'Physical Therapy',
-      icon: require('../assets/adaptive-icon.png'), // Placeholder - replace later
+      icon: require('../assets/CVACare_Physical_Therapy.png'),
       description: 'Specialized treatment to restore movement, reduce pain, and improve physical function. Our expert therapists help you recover from injuries, manage chronic conditions, and enhance your overall mobility.',
       features: [
         'Movement Restoration',
@@ -36,7 +43,7 @@ const TherapyScreen = ({ onBack }) => {
     {
       id: 2,
       name: 'Speech Therapy',
-      icon: require('../assets/adaptive-icon.png'), // Placeholder - replace later
+      icon: require('../assets/CVACare_Speech_Therapy.png'),
       description: 'Comprehensive speech therapy programs designed to improve communication skills for children. Choose from three specialized therapy types tailored to specific needs.',
       subheading: 'Available Therapy Types:',
       therapyTypes: [
@@ -59,25 +66,58 @@ const TherapyScreen = ({ onBack }) => {
   ];
 
   const handleTherapyPress = (therapy) => {
-    setSelectedTherapy(selectedTherapy?.id === therapy.id ? null : therapy);
+    setSelectedTherapy(therapy);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTherapy(null);
   };
 
   const handleTherapySelect = (therapyType) => {
     console.log('Selected therapy:', therapyType);
-    // Navigate to booking or details
+    handleCloseModal();
+    
+    // Navigate to the appropriate therapy screen
+    if (therapyType === 'Physical Therapy') {
+      setShowPhysicalTherapy(true);
+    } else if (therapyType === 'Speech Therapy') {
+      setShowSpeechTherapy(true);
+    }
   };
+
+  const handleBackFromPhysicalTherapy = () => {
+    setShowPhysicalTherapy(false);
+  };
+
+  const handleBackFromSpeechTherapy = () => {
+    setShowSpeechTherapy(false);
+  };
+
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'home' && onNavigate) {
+      onNavigate('home');
+    } else if (tab === 'therapy') {
+      // Already on therapy screen
+    } else if (tab === 'health' && onNavigate) {
+      onNavigate('health');
+    } else if (tab === 'profile' && onNavigate) {
+      onNavigate('profile');
+    }
+  };
+
+  // Show Physical Therapy screen if selected
+  if (showPhysicalTherapy) {
+    return <PhysicalTherapyScreen onBack={handleBackFromPhysicalTherapy} />;
+  }
+
+  // Show Speech Therapy screen if selected
+  if (showSpeechTherapy) {
+    return <SpeechTherapyScreen onBack={handleBackFromSpeechTherapy} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Therapy Services</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       {/* Content */}
       <ScrollView 
         style={styles.content}
@@ -108,51 +148,95 @@ const TherapyScreen = ({ onBack }) => {
                 </View>
                 <Text style={styles.therapyName}>{therapy.name}</Text>
               </TouchableOpacity>
-
-              {/* Detail Card - Shows when therapy is tapped */}
-              {selectedTherapy?.id === therapy.id && (
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailDescription}>{therapy.description}</Text>
-                  
-                  {therapy.subheading && (
-                    <Text style={styles.detailSubheading}>{therapy.subheading}</Text>
-                  )}
-                  
-                  {therapy.features && (
-                    <View style={styles.featuresContainer}>
-                      {therapy.features.map((feature, index) => (
-                        <View key={index} style={styles.featureItem}>
-                          <Text style={styles.checkmark}>✓</Text>
-                          <Text style={styles.featureText}>{feature}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                  
-                  {therapy.therapyTypes && (
-                    <View style={styles.therapyTypesContainer}>
-                      {therapy.therapyTypes.map((type, index) => (
-                        <View key={index} style={styles.therapyTypeItem}>
-                          <Text style={styles.therapyTypeName}>{type.name}</Text>
-                          <Text style={styles.therapyTypeDesc}>{type.description}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                  
-                  <TouchableOpacity
-                    style={[styles.selectButton, { backgroundColor: therapy.buttonColor }]}
-                    onPress={() => handleTherapySelect(therapy.name)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.selectButtonText}>{therapy.buttonText}</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
           ))}
         </View>
       </ScrollView>
+
+      {/* Modal for Therapy Details */}
+      <Modal
+        visible={selectedTherapy !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Close Button */}
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={handleCloseModal}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={28} color="#333" />
+            </TouchableOpacity>
+
+            {/* Modal Header with Icon */}
+            {selectedTherapy && (
+              <ScrollView 
+                style={styles.modalScroll}
+                contentContainerStyle={styles.modalScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalIconCircle}>
+                    <Image 
+                      source={selectedTherapy.icon} 
+                      style={styles.modalIcon}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text style={styles.modalTitle}>{selectedTherapy.name}</Text>
+                </View>
+
+                {/* Description */}
+                <Text style={styles.modalDescription}>{selectedTherapy.description}</Text>
+
+                {/* Subheading */}
+                {selectedTherapy.subheading && (
+                  <Text style={styles.modalSubheading}>{selectedTherapy.subheading}</Text>
+                )}
+
+                {/* Features (Physical Therapy) */}
+                {selectedTherapy.features && (
+                  <View style={styles.featuresContainer}>
+                    {selectedTherapy.features.map((feature, index) => (
+                      <View key={index} style={styles.featureItem}>
+                        <Text style={styles.checkmark}>✓</Text>
+                        <Text style={styles.featureText}>{feature}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Therapy Types (Speech Therapy) */}
+                {selectedTherapy.therapyTypes && (
+                  <View style={styles.therapyTypesContainer}>
+                    {selectedTherapy.therapyTypes.map((type, index) => (
+                      <View key={index} style={styles.therapyTypeItem}>
+                        <Text style={styles.therapyTypeName}>{type.name}</Text>
+                        <Text style={styles.therapyTypeDesc}>{type.description}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Select Button */}
+                <TouchableOpacity
+                  style={[styles.selectButton, { backgroundColor: selectedTherapy.buttonColor }]}
+                  onPress={() => handleTherapySelect(selectedTherapy.name)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.selectButtonText}>{selectedTherapy.buttonText}</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Bottom Navbar */}
+      <BottomNav activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
 };
@@ -162,32 +246,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  
-  // Header Styles
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  placeholder: {
-    width: 34, // Same width as back button for centering
   },
 
   // Content Styles
@@ -253,8 +311,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
   therapyIcon: {
-    width: 120,
-    height: 120,
+    width: 200,
+    height: 200,
   },
   therapyName: {
     fontSize: 20,
@@ -263,81 +321,133 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Detail Card Styles
-  detailCard: {
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
     width: '90%',
+    maxHeight: '80%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 15,
+    borderRadius: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    padding: 5,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+  },
+  modalScroll: {
+    maxHeight: '100%',
+  },
+  modalScrollContent: {
     padding: 20,
-    marginTop: 10,
+    paddingTop: 50,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#C9302C',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowRadius: 3,
   },
-  detailDescription: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 22,
-    marginBottom: 15,
-    textAlign: 'left',
+  modalIcon: {
+    width: 110,
+    height: 110,
   },
-  detailSubheading: {
-    fontSize: 16,
+  modalTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 24,
+    marginBottom: 20,
+    textAlign: 'left',
+  },
+  modalSubheading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 15,
     marginTop: 10,
   },
 
   // Features (for Physical Therapy)
   featuresContainer: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   checkmark: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#27AE60',
-    marginRight: 10,
+    marginRight: 12,
     fontWeight: 'bold',
   },
   featureText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#555',
     flex: 1,
   },
 
   // Therapy Types (for Speech Therapy)
   therapyTypesContainer: {
-    marginBottom: 15,
+    marginBottom: 20,
   },
   therapyTypeItem: {
-    marginBottom: 12,
+    marginBottom: 15,
   },
   therapyTypeName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   therapyTypeDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
-    lineHeight: 18,
+    lineHeight: 20,
   },
 
   // Select Button
   selectButton: {
-    paddingVertical: 15,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 10,
   },
   selectButtonText: {
     color: '#FFFFFF',
