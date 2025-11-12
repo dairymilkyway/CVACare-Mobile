@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,22 +34,30 @@ const LandingPage = ({ onGetStarted }) => {
         <Image
           source={require('../assets/landingcontent.png')}
           style={styles.contentImage}
-          resizeMode="contain"
+          resizeMode="cover"
         />
         
+        <View style={styles.brandContainer}>
+          <Image
+            source={require('../assets/CVAPed_Text.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+        </View>
+
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Empowering</Text>
-          <Text style={styles.title}>Journeys to Recovery</Text>
+          <Text style={styles.subtitle}>Empowering Journeys to Recovery</Text>
           <Text style={styles.description}>
-            CVACare provides integrated physical therapy for stroke patients and specialized speech therapy for children, fostering strength, communication, and renewed independence.
+            CVAPed provides integrated physical therapy for stroke patients and specialized speech therapy for children, fostering strength, communication, and renewed independence.
           </Text>
         </View>
-      </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={onGetStarted}>
-          <Text style={styles.buttonText}>Let's Go!</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={onGetStarted} activeOpacity={0.8}>
+            <Text style={styles.buttonText}>Get Started</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -64,74 +73,89 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 25,
+    paddingTop: 15,
+    paddingBottom: 15,
+    backgroundColor: '#FFFFFF',
   },
   leftLogo: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     transform: [{ scale: 2.75 }],
   },
   rightLogo: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 10,
   },
   contentImage: {
     width: width,
-    height: height * 0.45,
-    marginBottom: 10,
+    height: height * 0.42,
+    marginBottom: 15,
+  },
+  brandContainer: {
+    alignItems: 'center',
+    marginVertical: 8,
+    paddingHorizontal: 20,
+  },
+  brandLogo: {
+    width: width * 0.65,
+    height: 50,
   },
   textContainer: {
     paddingHorizontal: 30,
     alignItems: 'center',
-    marginTop: -10,
+    marginTop: 5,
+    marginBottom: 15,
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#000000',
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
     textAlign: 'center',
-    lineHeight: 42,
+    marginBottom: 10,
+    letterSpacing: 0.5,
   },
   description: {
-    fontSize: 15,
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 15,
+    fontSize: 14,
+    color: '#555555',
+    textAlign: 'justify',
     lineHeight: 22,
     paddingHorizontal: 5,
   },
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 30,
+    paddingBottom: 25,
     alignItems: 'center',
   },
   button: {
-    backgroundColor: '#E74C3C',
-    paddingVertical: 18,
-    paddingHorizontal: 80,
+    flexDirection: 'row',
+    backgroundColor: '#C9302C',
+    paddingVertical: 16,
+    paddingHorizontal: 60,
     borderRadius: 30,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: '#C9302C',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: width * 0.6,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  buttonIcon: {
+    marginLeft: 10,
   },
 });
 

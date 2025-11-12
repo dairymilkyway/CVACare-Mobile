@@ -21,24 +21,10 @@ const BottomNav = ({ activeTab, onTabPress }) => {
 
       <TouchableOpacity 
         style={styles.navItem}
-        onPress={() => onTabPress('appointments')}
-      >
-        <Ionicons 
-          name={activeTab === 'appointments' ? 'calendar' : 'calendar-outline'} 
-          size={28} 
-          color={activeTab === 'appointments' ? '#C9302C' : '#666'} 
-        />
-        <Text style={[styles.navText, activeTab === 'appointments' && styles.navTextActive]}>
-          Appointments
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.navItem}
         onPress={() => onTabPress('therapy')}
       >
         <Ionicons 
-          name={activeTab === 'therapy' ? 'fitness' : 'fitness-outline'} 
+          name={activeTab === 'therapy' ? 'medkit' : 'medkit-outline'} 
           size={28} 
           color={activeTab === 'therapy' ? '#C9302C' : '#666'} 
         />

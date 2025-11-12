@@ -21,7 +21,7 @@ import '../config/firebase';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = ({ onRegister, onLoginSuccess }) => {
+const LoginScreen = ({ onRegister, onLoginSuccess, onGoogleSignIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,14 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
       // Check if your device supports Google Play
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       
-      // Sign in with Google
+      // Sign out first to force account selection
+      try {
+        await GoogleSignin.signOut();
+      } catch (signOutError) {
+        console.log('No previous Google sign-in to sign out from');
+      }
+      
+      // Sign in with Google - this will show account picker
       const userInfo = await GoogleSignin.signIn();
       
       // Get the ID token
@@ -71,9 +78,19 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
       const response = await authAPI.googleSignIn(idToken);
       
       if (response.success) {
-        Alert.alert('Success', 'Google Sign-In successful!');
-        if (onLoginSuccess) {
-          onLoginSuccess(response.data);
+        console.log('Login successful, user data:', response.data);
+        console.log('Needs profile completion:', response.needsProfileCompletion);
+        
+        if (response.needsProfileCompletion) {
+          // Navigate to profile completion screen
+          if (onGoogleSignIn) {
+            onGoogleSignIn(response.data);
+          }
+        } else {
+          Alert.alert('Success', 'Google Sign-In successful!');
+          if (onLoginSuccess) {
+            onLoginSuccess(response.data);
+          }
         }
       }
     } catch (error) {
@@ -109,8 +126,13 @@ const LoginScreen = ({ onRegister, onLoginSuccess }) => {
         >
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/cvalogotext.png')}
-              style={styles.logo}
+              source={require('../assets/cvalogonotext.png')}
+              style={styles.logoIcon}
+              resizeMode="contain"
+            />
+            <Image
+              source={require('../assets/CVAPed_Text.png')}
+              style={styles.logoText}
               resizeMode="contain"
             />
           </View>
@@ -192,18 +214,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 30,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 50,
-    marginTop: 40,
+    marginBottom: 40,
   },
-  logo: {
-    width: width * 1,
-    height: height * 0.35,
-    transform: [{ scale: 1.75 }],
+  logoIcon: {
+    width: 400,
+    height: 250,
+    marginBottom: -70,
+  },
+  logoText: {
+    width: width * 0.6,
+    height: 50,
   },
   formContainer: {
     width: '100%',
@@ -241,6 +267,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 30,
   },
   registerText: {
     fontSize: 15,

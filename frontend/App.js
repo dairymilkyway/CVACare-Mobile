@@ -6,6 +6,7 @@ import LandingPage from './components/LandingPage';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import OTPScreen from './components/OTPScreen';
+import ProfileCompletionScreen from './components/ProfileCompletionScreen';
 import HomePage from './components/HomePage';
 import './config/firebase'; // Initialize Google Sign-In configuration
 
@@ -18,9 +19,11 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
   const [showHome, setShowHome] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userData, setUserData] = useState(null);
+  const [googleUserData, setGoogleUserData] = useState(null);
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
@@ -80,6 +83,33 @@ export default function App() {
     setShowHome(true);
   };
 
+  const handleGoogleSignIn = (data) => {
+    console.log('Google Sign-In data received in App.js:', data);
+    // Store the Google user data with token
+    setGoogleUserData(data);
+    setShowLogin(false);
+    setShowRegister(false);
+    setShowProfileCompletion(true);
+  };
+
+  const handleProfileComplete = (data) => {
+    console.log('Profile completion successful:', data);
+    // Store updated user data with profile info
+    setUserData(data);
+    setShowProfileCompletion(false);
+    setShowHome(true);
+  };
+
+  const handleLogout = () => {
+    console.log('User logged out');
+    // Clear user data
+    setUserData(null);
+    setGoogleUserData(null);
+    // Reset to landing page
+    setShowHome(false);
+    setShowLanding(true);
+  };
+
   if (!appIsReady || showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
@@ -99,6 +129,7 @@ export default function App() {
         <LoginScreen 
           onRegister={handleRegister}
           onLoginSuccess={handleLoginSuccess}
+          onGoogleSignIn={handleGoogleSignIn}
         />
         <StatusBar style="auto" />
       </>
@@ -111,6 +142,7 @@ export default function App() {
         <RegisterScreen 
           onLogin={handleBackToLogin}
           onRegisterSuccess={handleRegisterSubmit}
+          onGoogleSignIn={handleGoogleSignIn}
         />
         <StatusBar style="auto" />
       </>
@@ -129,10 +161,26 @@ export default function App() {
     );
   }
 
+  if (showProfileCompletion) {
+    return (
+      <>
+        <ProfileCompletionScreen 
+          token={googleUserData?.token}
+          userData={googleUserData}
+          onComplete={handleProfileComplete}
+        />
+        <StatusBar style="auto" />
+      </>
+    );
+  }
+
   if (showHome) {
     return (
       <>
-        <HomePage userData={userData} />
+        <HomePage 
+          userData={userData} 
+          onLogout={handleLogout}
+        />
         <StatusBar style="auto" />
       </>
     );

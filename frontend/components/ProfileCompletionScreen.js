@@ -15,24 +15,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { authAPI } from '../services/api';
-import '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
+import { authAPI } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
-  // Basic Account Information
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  
+const ProfileCompletionScreen = ({ token, userData, onComplete }) => {
   // Therapy Selection
-  const [therapyType, setTherapyType] = useState(''); // 'speech' or 'physical'
-  const [patientType, setPatientType] = useState(''); // 'myself', 'child', 'dependent'
+  const [therapyType, setTherapyType] = useState('');
+  const [patientType, setPatientType] = useState('');
   
   // Speech Therapy - Child Information
   const [childFirstName, setChildFirstName] = useState('');
@@ -43,7 +34,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
   // Speech Therapy - Parent/Guardian Information
   const [parentFirstName, setParentFirstName] = useState('');
   const [parentLastName, setParentLastName] = useState('');
-  const [parentEmail, setParentEmail] = useState('');
+  const [parentEmail, setParentEmail] = useState(userData?.email || '');
   const [parentPhone, setParentPhone] = useState('');
   const [relationshipWithChild, setRelationshipWithChild] = useState('');
   const [copyParentInfo, setCopyParentInfo] = useState(false);
@@ -56,17 +47,33 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
   const [copyPatientInfo, setCopyPatientInfo] = useState(false);
   
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1); // 1: Basic Info, 2: Therapy Type, 3: Patient Type, 4: Additional Info
+  const [currentStep, setCurrentStep] = useState(1); // 1: Therapy Type, 2: Patient Type, 3: Additional Info
+
+  // Get user's first and last name for auto-fill
+  const userFirstName = userData?.firstName || '';
+  const userLastName = userData?.lastName || '';
+
+  // Auto-fill patient info when "myself" is selected for physical therapy
+  useEffect(() => {
+    if (therapyType === 'physical' && patientType === 'myself') {
+      setPatientFirstName(userFirstName);
+      setPatientLastName(userLastName);
+    } else if (therapyType === 'physical' && patientType !== 'myself' && patientFirstName === userFirstName && patientLastName === userLastName) {
+      // Clear auto-filled data when switching away from "myself"
+      setPatientFirstName('');
+      setPatientLastName('');
+      setPatientPhone('');
+    }
+  }, [therapyType, patientType, userFirstName, userLastName]);
 
   // Handle copying parent info
   const toggleCopyParentInfo = () => {
     const newValue = !copyParentInfo;
     setCopyParentInfo(newValue);
     if (newValue) {
-      setParentFirstName(firstName);
-      setParentLastName(lastName);
-      setParentEmail(email);
+      setParentFirstName(userFirstName);
+      setParentLastName(userLastName);
+      setParentEmail(userData?.email || '');
     } else {
       setParentFirstName('');
       setParentLastName('');
@@ -79,47 +86,17 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
     const newValue = !copyPatientInfo;
     setCopyPatientInfo(newValue);
     if (newValue) {
-      setPatientFirstName(firstName);
-      setPatientLastName(lastName);
+      setPatientFirstName(userFirstName);
+      setPatientLastName(userLastName);
     } else {
       setPatientFirstName('');
       setPatientLastName('');
     }
   };
 
-  // Auto-fill patient info when "myself" is selected for physical therapy
-  useEffect(() => {
-    if (therapyType === 'physical' && patientType === 'myself') {
-      setPatientFirstName(firstName);
-      setPatientLastName(lastName);
-      // Phone will be empty since users haven't entered their phone in basic info
-    } else if (therapyType === 'physical' && patientType !== 'myself' && patientFirstName === firstName && patientLastName === lastName) {
-      // Clear auto-filled data when switching away from "myself"
-      setPatientFirstName('');
-      setPatientLastName('');
-      setPatientPhone('');
-    }
-  }, [therapyType, patientType, firstName, lastName]);
-
   // Validate current step
   const validateStep = () => {
     if (currentStep === 1) {
-      if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
-        Alert.alert('Error', 'Please fill in all fields');
-        return false;
-      }
-      if (password !== confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
-        return false;
-      }
-      if (password.length < 6) {
-        Alert.alert('Error', 'Password must be at least 6 characters long');
-        return false;
-      }
-      return true;
-    }
-    
-    if (currentStep === 2) {
       if (!therapyType) {
         Alert.alert('Error', 'Please select a therapy type');
         return false;
@@ -127,7 +104,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
       return true;
     }
     
-    if (currentStep === 3) {
+    if (currentStep === 2) {
       if (!patientType) {
         Alert.alert('Error', 'Please select who needs therapy');
         return false;
@@ -135,7 +112,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
       return true;
     }
     
-    if (currentStep === 4) {
+    if (currentStep === 3) {
       // For speech therapy with child
       if (therapyType === 'speech' && patientType === 'child') {
         if (!childFirstName.trim() || !childLastName.trim() || !childDateOfBirth.trim() || !childGender) {
@@ -177,122 +154,48 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleRegister = async () => {
+  const handleComplete = async () => {
     if (!validateStep()) {
       return;
     }
 
     setLoading(true);
     try {
-      const registrationData = {
-        firstName,
-        lastName,
-        email,
-        password,
+      const profileData = {
         therapyType,
         patientType,
       };
 
       // Add conditional fields based on therapy type and patient type
       if (therapyType === 'speech' && patientType === 'child') {
-        registrationData.childFirstName = childFirstName;
-        registrationData.childLastName = childLastName;
-        registrationData.childDateOfBirth = childDateOfBirth;
-        registrationData.childGender = childGender;
-        registrationData.parentFirstName = parentFirstName;
-        registrationData.parentLastName = parentLastName;
-        registrationData.parentEmail = parentEmail;
-        registrationData.parentPhone = parentPhone;
-        registrationData.relationshipWithChild = relationshipWithChild;
+        profileData.childFirstName = childFirstName;
+        profileData.childLastName = childLastName;
+        profileData.childDateOfBirth = childDateOfBirth;
+        profileData.childGender = childGender;
+        profileData.parentFirstName = parentFirstName;
+        profileData.parentLastName = parentLastName;
+        profileData.parentEmail = parentEmail;
+        profileData.parentPhone = parentPhone;
+        profileData.relationshipWithChild = relationshipWithChild;
       }
 
       if (therapyType === 'physical') {
-        registrationData.patientFirstName = patientFirstName;
-        registrationData.patientLastName = patientLastName;
-        registrationData.patientGender = patientGender;
-        registrationData.patientPhone = patientPhone;
+        profileData.patientFirstName = patientFirstName;
+        profileData.patientLastName = patientLastName;
+        profileData.patientGender = patientGender;
+        profileData.patientPhone = patientPhone;
       }
 
-      const response = await authAPI.register(registrationData);
+      const response = await authAPI.completeProfile(token, profileData);
       Alert.alert(
         'Success',
-        'Registration successful! Please check your email for OTP.',
-        [{ text: 'OK', onPress: () => onRegisterSuccess(email) }]
+        'Profile completed successfully!',
+        [{ text: 'OK', onPress: () => onComplete(response.data) }]
       );
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Registration failed');
+      Alert.alert('Error', error.message || 'Failed to complete profile');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      // Check if your device supports Google Play
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      
-      // Sign out first to force account selection
-      try {
-        await GoogleSignin.signOut();
-      } catch (signOutError) {
-        console.log('No previous Google sign-in to sign out from');
-      }
-      
-      // Sign in with Google - this will show account picker
-      const userInfo = await GoogleSignin.signIn();
-      
-      // Get the ID token
-      const idToken = userInfo.data?.idToken || userInfo.idToken;
-      
-      if (!idToken) {
-        throw new Error('No ID token received from Google');
-      }
-
-      // Send ID token to backend
-      const response = await authAPI.googleSignIn(idToken);
-      
-      if (response.success) {
-        console.log('Registration successful, user data:', response.data);
-        console.log('Needs profile completion:', response.needsProfileCompletion);
-        
-        if (response.needsProfileCompletion) {
-          // Navigate to profile completion screen
-          if (onGoogleSignIn) {
-            onGoogleSignIn(response.data);
-          }
-        } else {
-          Alert.alert(
-            'Success', 
-            'Google Sign-In successful!',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  // Navigate to login or home screen
-                  if (onLogin) {
-                    onLogin(response.data);
-                  }
-                }
-              }
-            ]
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Google Sign-In Error:', error);
-      
-      if (error.code === 'SIGN_IN_CANCELLED') {
-        Alert.alert('Cancelled', 'Google Sign-In was cancelled');
-      } else if (error.code === 'IN_PROGRESS') {
-        Alert.alert('In Progress', 'Sign-In is already in progress');
-      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
-        Alert.alert('Error', 'Google Play Services not available');
-      } else {
-        Alert.alert('Error', error.message || 'Google Sign-In failed');
-      }
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -300,56 +203,6 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <View style={styles.formContainer}>
-            <Text style={styles.stepTitle}>Basic Information</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              placeholderTextColor="#B0B0B0"
-              value={firstName}
-              onChangeText={setFirstName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Last Name"
-              placeholderTextColor="#B0B0B0"
-              value={lastName}
-              onChangeText={setLastName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor="#B0B0B0"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#B0B0B0"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              placeholderTextColor="#B0B0B0"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
-        );
-
-      case 2:
         return (
           <View style={styles.formContainer}>
             <Text style={styles.stepTitle}>Select Therapy Type</Text>
@@ -395,7 +248,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
           </View>
         );
 
-      case 3:
+      case 2:
         return (
           <View style={styles.formContainer}>
             <Text style={styles.stepTitle}>Who needs therapy?</Text>
@@ -461,7 +314,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
           </View>
         );
 
-      case 4:
+      case 3:
         if (therapyType === 'speech' && patientType === 'child') {
           return (
             <View style={styles.formContainer}>
@@ -512,7 +365,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
                   size={24} 
                   color="#C9302C" 
                 />
-                <Text style={styles.checkboxLabel}>Copy my information</Text>
+                <Text style={styles.checkboxLabel}>Use my information</Text>
               </TouchableOpacity>
 
               <TextInput
@@ -575,7 +428,7 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
                     size={24} 
                     color="#C9302C" 
                   />
-                  <Text style={styles.checkboxLabel}>Copy my information</Text>
+                  <Text style={styles.checkboxLabel}>Use my information</Text>
                 </TouchableOpacity>
               )}
 
@@ -650,11 +503,12 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
             />
           </View>
 
-          <Text style={styles.title}>Create Your Account</Text>
+          <Text style={styles.title}>Complete Your Profile</Text>
+          <Text style={styles.welcomeText}>Welcome, {userData?.name}!</Text>
 
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
-            {[1, 2, 3, 4].map((step) => (
+            {[1, 2, 3].map((step) => (
               <View
                 key={step}
                 style={[
@@ -676,58 +530,26 @@ const RegisterScreen = ({ onLogin, onRegisterSuccess, onGoogleSignIn }) => {
               </TouchableOpacity>
             )}
 
-            {currentStep < 4 && (
+            {currentStep < 3 && (
               <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
                 <Text style={styles.nextButtonText}>Next</Text>
                 <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             )}
 
-            {currentStep === 4 && (
+            {currentStep === 3 && (
               <TouchableOpacity 
-                style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
-                onPress={handleRegister}
+                style={[styles.completeButton, loading && styles.completeButtonDisabled]} 
+                onPress={handleComplete}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.registerButtonText}>REGISTER</Text>
+                  <Text style={styles.completeButtonText}>COMPLETE PROFILE</Text>
                 )}
               </TouchableOpacity>
             )}
-          </View>
-
-          {currentStep === 1 && (
-            <>
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.divider} />
-              </View>
-
-              <TouchableOpacity 
-                style={[styles.googleButton, googleLoading && styles.googleButtonDisabled]} 
-                onPress={handleGoogleSignIn}
-                disabled={googleLoading}
-              >
-                {googleLoading ? (
-                  <ActivityIndicator color="#4285F4" />
-                ) : (
-                  <>
-                    <Ionicons name="logo-google" size={24} color="#4285F4" style={styles.googleIcon} />
-                    <Text style={styles.googleButtonText}>Sign up with Google</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </>
-          )}
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onLogin}>
-              <Text style={styles.loginLink}>Login Now</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -754,18 +576,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logoIcon: {
-    width: 100,
-    height: 100,
-    marginBottom: -30,
+    width: 80,
+    height: 80,
+    marginBottom: 10,
   },
   logoText: {
-    width: width * 0.55,
-    height: 45,
+    width: width * 0.5,
+    height: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#2C3E50',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -908,77 +736,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  registerButton: {
+  completeButton: {
     backgroundColor: '#C9302C',
     paddingVertical: 18,
     borderRadius: 10,
     alignItems: 'center',
     flex: 1,
   },
-  registerButtonDisabled: {
+  completeButtonDisabled: {
     backgroundColor: '#D0D0D0',
   },
-  registerButtonText: {
+  completeButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  loginText: {
-    fontSize: 15,
-    color: '#333333',
-  },
-  loginLink: {
-    fontSize: 15,
-    color: '#6B9AC4',
-    fontWeight: '600',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#D0D0D0',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  googleButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#4285F4',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    flexDirection: 'row',
-  },
-  googleButtonDisabled: {
-    backgroundColor: '#F0F0F0',
-    borderColor: '#D0D0D0',
-  },
-  googleIcon: {
-    marginRight: 10,
-  },
-  googleButtonText: {
-    color: '#4285F4',
-    fontSize: 16,
-    fontWeight: '600',
-  },
 });
 
-export default RegisterScreen;
+export default ProfileCompletionScreen;

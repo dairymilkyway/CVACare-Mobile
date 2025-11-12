@@ -88,6 +88,36 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Complete Profile (for Google sign-in users)
+  completeProfile: async (token, profileData) => {
+    try {
+      const response = await api.post('/auth/complete-profile', profileData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update Profile
+  updateProfile: async (token, profileData) => {
+    try {
+      console.log('API: Updating profile with token:', token ? 'Token exists' : 'No token');
+      console.log('API: Profile data:', profileData);
+      
+      const response = await api.put('/auth/updateprofile', profileData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      console.log('API: Update response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('API: Update error:', error.response?.data || error);
+      throw error.response?.data || { message: error.message || 'Unknown error' };
+    }
+  },
 };
 
 export default api;

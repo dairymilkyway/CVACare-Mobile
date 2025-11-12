@@ -24,18 +24,42 @@ exports.register = async (req, res) => {
   console.log('Request Body:', JSON.stringify(req.body, null, 2));
   
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.log('❌ Validation errors:', errors.array());
+    const { 
+      firstName,
+      lastName,
+      email,
+      password,
+      therapyType,
+      patientType,
+      // Speech therapy - child fields
+      childFirstName,
+      childLastName,
+      childDateOfBirth,
+      childGender,
+      // Speech therapy - parent fields
+      parentFirstName,
+      parentLastName,
+      parentEmail,
+      parentPhone,
+      relationshipWithChild,
+      // Physical therapy - patient fields
+      patientFirstName,
+      patientLastName,
+      patientGender,
+      patientPhone
+    } = req.body;
+    
+    console.log('📝 Extracted fields - FirstName:', firstName, 'LastName:', lastName, 'Email:', email);
+    console.log('📝 Therapy Type:', therapyType, 'Patient Type:', patientType);
+
+    // Basic validation
+    if (!firstName || !lastName || !email || !password) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        message: 'Please provide first name, last name, email, and password'
       });
     }
-
-    const { name, email, password } = req.body;
-    console.log('📝 Extracted fields - Name:', name, 'Email:', email);
 
     // Check if user already exists
     console.log('🔍 Checking if user exists...');
@@ -58,21 +82,56 @@ exports.register = async (req, res) => {
 
     // Create user (unverified)
     console.log('💾 Creating user in database...');
-    const user = await User.create({
-      name,
+    const userData = {
+      firstName,
+      lastName,
       email,
       password,
       otp,
       otpExpiry,
-      isVerified: false
-    });
+      isVerified: false,
+      role: 'patient', // Always set role to patient for new registrations
+      therapyType,
+      patientType
+    };
+
+    // Add conditional fields based on therapy type and patient type
+    if (therapyType === 'speech' && patientType === 'child') {
+      userData.childInfo = {
+        firstName: childFirstName,
+        lastName: childLastName,
+        dateOfBirth: childDateOfBirth,
+        gender: childGender
+      };
+      userData.parentInfo = {
+        firstName: parentFirstName,
+        lastName: parentLastName,
+        email: parentEmail,
+        phone: parentPhone,
+        relationship: relationshipWithChild
+      };
+      console.log('📝 Added child and parent info');
+    }
+
+    if (therapyType === 'physical') {
+      userData.patientInfo = {
+        firstName: patientFirstName,
+        lastName: patientLastName,
+        gender: patientGender,
+        phone: patientPhone
+      };
+      console.log('📝 Added patient info');
+    }
+
+    const user = await User.create(userData);
     console.log('✅ User created successfully:', user._id);
 
     if (user) {
       // Send OTP email
       console.log('📧 Sending OTP email...');
       try {
-        await sendOTPEmail(email, otp, name);
+        const fullName = `${firstName} ${lastName}`;
+        await sendOTPEmail(email, otp, fullName);
         console.log('✅ OTP email sent successfully');
       } catch (emailError) {
         console.error('⚠️  Error sending OTP email:', emailError.message);
@@ -175,8 +234,10 @@ exports.verifyOTP = async (req, res) => {
       message: 'Email verified successfully',
       data: {
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        role: user.role,
         isVerified: user.isVerified,
         token: generateToken(user._id)
       }
@@ -328,9 +389,19 @@ exports.login = async (req, res) => {
       success: true,
       data: {
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        role: user.role,
+        phone: user.phone,
         isVerified: user.isVerified,
+        therapyType: user.therapyType,
+        patientType: user.patientType,
+        childInfo: user.childInfo,
+        parentInfo: user.parentInfo,
+        patientInfo: user.patientInfo,
+        picture: user.picture,
+        googleId: user.googleId,
         token: token
       }
     });
@@ -369,10 +440,12 @@ exports.getMe = async (req, res) => {
 // @access  Private
 exports.updateProfile = async (req, res) => {
   try {
-    const fieldsToUpdate = {
-      name: req.body.name,
-      email: req.body.email
-    };
+    const fieldsToUpdate = {};
+    
+    // Only update fields that are provided
+    if (req.body.firstName) fieldsToUpdate.firstName = req.body.firstName;
+    if (req.body.lastName) fieldsToUpdate.lastName = req.body.lastName;
+    if (req.body.phone !== undefined) fieldsToUpdate.phone = req.body.phone;
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
       new: true,
@@ -445,28 +518,73 @@ exports.googleAuth = async (req, res) => {
       if (!user.googleId) {
         user.googleId = googleId;
         user.picture = picture;
-        await user.save();
+        // Ensure firstName and lastName are set from name if they don't exist
+        if (!user.firstName || !user.lastName) {
+          const nameParts = name.split(' ');
+          user.firstName = user.firstName || nameParts[0];
+          user.lastName = user.lastName || nameParts.slice(1).join(' ') || nameParts[0];
+        }
+        await user.save({ validateBeforeSave: false }); // Skip validation for existing user
         console.log('✅ Updated user with Google info');
       }
+
+      // Check if profile is complete (has therapy type and patient type)
+      const isProfileComplete = user.therapyType && user.patientType;
+      console.log(`📋 Profile complete: ${isProfileComplete}`);
 
       // Sync to Firebase Authentication
       await createOrUpdateFirebaseUser({
         uid: user._id.toString(),
         email: user.email,
-        name: user.name,
+        name: `${user.firstName} ${user.lastName}`,
         picture: user.picture,
         isVerified: user.isVerified,
         googleId: user.googleId
       });
+
+      // Generate JWT token
+      console.log('🔑 Generating JWT token...');
+      const token = generateToken(user._id);
+
+      console.log('✅ Google authentication successful');
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        needsProfileCompletion: false,
+        data: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          picture: user.picture,
+          role: user.role,
+          phone: user.phone,
+          isVerified: user.isVerified,
+          therapyType: user.therapyType,
+          patientType: user.patientType,
+          childInfo: user.childInfo,
+          parentInfo: user.parentInfo,
+          patientInfo: user.patientInfo,
+          googleId: user.googleId,
+          token: token
+        }
+      });
     } else {
       console.log('📝 Creating new user with Google info...');
       
-      // Create new user
+      // Split name into firstName and lastName
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+
+      // Create new user with minimal info (profile completion needed)
       user = await User.create({
-        name,
+        firstName,
+        lastName,
         email,
         googleId,
         picture,
+        role: 'patient', // Default role for Google sign-ups
         isVerified: true, // Google accounts are pre-verified
         password: Math.random().toString(36).slice(-8) + 'Aa1!' // Random password (won't be used for Google login)
       });
@@ -477,30 +595,35 @@ exports.googleAuth = async (req, res) => {
       await createOrUpdateFirebaseUser({
         uid: user._id.toString(),
         email: user.email,
-        name: user.name,
+        name: `${firstName} ${lastName}`,
         picture: user.picture,
         isVerified: user.isVerified,
         googleId: user.googleId
       });
+
+      // Generate JWT token
+      console.log('🔑 Generating JWT token...');
+      const token = generateToken(user._id);
+
+      console.log('✅ Google authentication successful - Profile completion needed');
+      res.status(200).json({
+        success: true,
+        message: 'Account created successfully',
+        needsProfileCompletion: true,
+        data: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          picture: user.picture,
+          role: user.role,
+          phone: user.phone,
+          isVerified: user.isVerified,
+          googleId: user.googleId,
+          token: token
+        }
+      });
     }
-
-    // Generate JWT token
-    console.log('🔑 Generating JWT token...');
-    const token = generateToken(user._id);
-
-    console.log('✅ Google authentication successful');
-    res.status(200).json({
-      success: true,
-      message: user.googleId ? 'Login successful' : 'Account created successfully',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        picture: user.picture,
-        isVerified: user.isVerified,
-        token: token
-      }
-    });
   } catch (error) {
     console.error('❌ GOOGLE AUTH ERROR:', error);
     console.error('Error Stack:', error.stack);
@@ -510,4 +633,112 @@ exports.googleAuth = async (req, res) => {
     });
   }
   console.log('=== GOOGLE AUTH REQUEST ENDED ===\n');
+};
+
+// @desc    Complete profile for Google sign-in users
+// @route   POST /api/auth/complete-profile
+// @access  Private (requires token)
+exports.completeProfile = async (req, res) => {
+  console.log('\n=== COMPLETE PROFILE REQUEST STARTED ===');
+  console.log('Request Body:', JSON.stringify(req.body, null, 2));
+  console.log('User ID from token:', req.user?._id);
+  
+  try {
+    const userId = req.user._id;
+    const { 
+      therapyType,
+      patientType,
+      // Speech therapy - child fields
+      childFirstName,
+      childLastName,
+      childDateOfBirth,
+      childGender,
+      // Speech therapy - parent fields
+      parentFirstName,
+      parentLastName,
+      parentEmail,
+      parentPhone,
+      relationshipWithChild,
+      // Physical therapy - patient fields
+      patientFirstName,
+      patientLastName,
+      patientGender,
+      patientPhone
+    } = req.body;
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log('📝 Updating user profile...');
+
+    // Update therapy and patient type
+    user.therapyType = therapyType;
+    user.patientType = patientType;
+
+    // Add conditional fields based on therapy type and patient type
+    if (therapyType === 'speech' && patientType === 'child') {
+      user.childInfo = {
+        firstName: childFirstName,
+        lastName: childLastName,
+        dateOfBirth: childDateOfBirth,
+        gender: childGender
+      };
+      user.parentInfo = {
+        firstName: parentFirstName,
+        lastName: parentLastName,
+        email: parentEmail,
+        phone: parentPhone,
+        relationship: relationshipWithChild
+      };
+      console.log('📝 Added child and parent info');
+    }
+
+    if (therapyType === 'physical') {
+      user.patientInfo = {
+        firstName: patientFirstName,
+        lastName: patientLastName,
+        gender: patientGender,
+        phone: patientPhone
+      };
+      console.log('📝 Added patient info');
+    }
+
+    await user.save();
+    console.log('✅ Profile completed successfully');
+
+    // Generate a fresh token to include in response
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile completed successfully',
+      data: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        therapyType: user.therapyType,
+        patientType: user.patientType,
+        childInfo: user.childInfo,
+        parentInfo: user.parentInfo,
+        patientInfo: user.patientInfo,
+        isVerified: user.isVerified,
+        token: token
+      }
+    });
+  } catch (error) {
+    console.error('❌ COMPLETE PROFILE ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to complete profile'
+    });
+  }
+  console.log('=== COMPLETE PROFILE REQUEST ENDED ===\n');
 };

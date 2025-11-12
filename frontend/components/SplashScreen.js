@@ -49,8 +49,13 @@ const SplashScreen = ({ onFinish }) => {
         ]}
       >
         <Image
-          source={require('../assets/cvalogotext.png')}
-          style={styles.logo}
+          source={require('../assets/cvalogonotext.png')}
+          style={styles.logoIcon}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../assets/CVAPed_Text.png')}
+          style={styles.logoText}
           resizeMode="contain"
         />
       </Animated.View>
@@ -69,9 +74,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: {
-    width: width * 0.85,
-    height: height * 0.45,
+  logoIcon: {
+    width: width * 0.6,
+    height: width * 0.6,
+    marginBottom: -70,
+  },
+  logoText: {
+    width: width * 0.75,
+    height: 90,
   },
 });
 

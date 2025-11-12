@@ -2,11 +2,17 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  name: {
+  firstName: {
     type: String,
-    required: [true, 'Please provide a name'],
+    required: [true, 'Please provide a first name'],
     trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters']
+    maxlength: [50, 'First name cannot be more than 50 characters']
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Please provide a last name'],
+    trim: true,
+    maxlength: [50, 'Last name cannot be more than 50 characters']
   },
   email: {
     type: String,
@@ -24,6 +30,15 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide a password'],
     minlength: [6, 'Password must be at least 6 characters'],
     select: false // Don't include password in queries by default
+  },
+  role: {
+    type: String,
+    enum: ['patient', 'therapist', 'admin'],
+    default: 'patient'
+  },
+  phone: {
+    type: String,
+    trim: true
   },
   isVerified: {
     type: Boolean,
@@ -44,6 +59,43 @@ const userSchema = new mongoose.Schema({
   },
   picture: {
     type: String
+  },
+  // Therapy information
+  therapyType: {
+    type: String,
+    enum: ['speech', 'physical'],
+  },
+  patientType: {
+    type: String,
+    enum: ['myself', 'child', 'dependent'],
+  },
+  // For speech therapy - child information
+  childInfo: {
+    firstName: String,
+    lastName: String,
+    dateOfBirth: String,
+    gender: {
+      type: String,
+      enum: ['male', 'female']
+    }
+  },
+  // For speech therapy - parent/guardian information
+  parentInfo: {
+    firstName: String,
+    lastName: String,
+    email: String,
+    phone: String,
+    relationship: String
+  },
+  // For physical therapy - patient information
+  patientInfo: {
+    firstName: String,
+    lastName: String,
+    gender: {
+      type: String,
+      enum: ['male', 'female']
+    },
+    phone: String
   },
   createdAt: {
     type: Date,

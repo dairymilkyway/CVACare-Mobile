@@ -14,14 +14,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TherapyScreen from './TherapyScreen';
+import ProfileScreen from './ProfileScreen';
 import BottomNav from './BottomNav';
 
 const { width, height } = Dimensions.get('window');
 
-const HomePage = ({ userData }) => {
+const HomePage = ({ userData, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('home');
   const [showTherapy, setShowTherapy] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const scrollViewRef = useRef(null);
 
   // Placeholder carousel data
@@ -47,14 +49,24 @@ const HomePage = ({ userData }) => {
     
     if (tab === 'therapy') {
       setShowTherapy(true);
+      setShowProfile(false);
+    } else if (tab === 'profile') {
+      setShowProfile(true);
+      setShowTherapy(false);
     } else {
       setShowTherapy(false);
+      setShowProfile(false);
       // Navigate to different screens based on tab
     }
   };
 
   const handleTherapyBack = () => {
     setShowTherapy(false);
+    setActiveTab('home');
+  };
+
+  const handleProfileBack = () => {
+    setShowProfile(false);
     setActiveTab('home');
   };
 
@@ -67,7 +79,19 @@ const HomePage = ({ userData }) => {
   const handleTherapyCardPress = () => {
     setActiveTab('therapy');
     setShowTherapy(true);
+    setShowProfile(false);
   };
+
+  // Show Profile screen if profile tab is active
+  if (showProfile) {
+    return (
+      <ProfileScreen 
+        userData={userData} 
+        onBack={handleProfileBack}
+        onLogout={onLogout}
+      />
+    );
+  }
 
   // Show Therapy screen if therapy tab is active
   if (showTherapy) {
@@ -324,7 +348,7 @@ const styles = StyleSheet.create({
 
   // Bottom Spacing
   bottomSpacing: {
-    height: 20,
+    height: 80,
   },
 });
 

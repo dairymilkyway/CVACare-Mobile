@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View,
+  Image,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
@@ -13,6 +14,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { authAPI } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
@@ -110,10 +112,26 @@ const OTPScreen = ({ onVerify, email }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../assets/cvalogonotext.png')}
+              style={styles.logoIcon}
+              resizeMode="contain"
+            />
+            <Image
+              source={require('../assets/CVAPed_Text.png')}
+              style={styles.logoText}
+              resizeMode="contain"
+            />
+          </View>
+
           <View style={styles.headerContainer}>
-            <Text style={styles.title}>Verify Your Account</Text>
+            <View style={styles.iconCircle}>
+              <Ionicons name="mail-outline" size={50} color="#C9302C" />
+            </View>
+            <Text style={styles.title}>Verify Your Email</Text>
             <Text style={styles.subtitle}>
-              We've sent a verification code to
+              We've sent a 6-digit code to
             </Text>
             <Text style={styles.email}>{email || 'your email'}</Text>
           </View>
@@ -148,7 +166,10 @@ const OTPScreen = ({ onVerify, email }) => {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.verifyButtonText}>VERIFY</Text>
+              <>
+                <Text style={styles.verifyButtonText}>VERIFY EMAIL</Text>
+                <Ionicons name="checkmark-circle-outline" size={24} color="#FFFFFF" style={styles.buttonIcon} />
+              </>
             )}
           </TouchableOpacity>
 
@@ -159,6 +180,13 @@ const OTPScreen = ({ onVerify, email }) => {
                 {resending ? 'Resending...' : 'Resend Code'}
               </Text>
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.footer}>
+            <Ionicons name="shield-checkmark-outline" size={16} color="#999" />
+            <Text style={styles.footerText}>
+              Your information is secure and protected
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -177,29 +205,53 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 30,
-    paddingTop: 80,
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  logoContainer: {
     alignItems: 'center',
+    marginBottom: 30,
+  },
+  logoIcon: {
+    width: 300,
+    height: 150,
+    marginBottom: -40,
+  },
+  logoText: {
+    width: width * 0.5,
+    height: 40,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFF5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: '#FFE5E5',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#2C3E50',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   subtitle: {
     fontSize: 16,
     color: '#666666',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   email: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: '#C9302C',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -208,7 +260,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 40,
-    gap: 12,
+    gap: 10,
   },
   otpInput: {
     width: 50,
@@ -229,26 +281,29 @@ const styles = StyleSheet.create({
   verifyButton: {
     backgroundColor: '#C9302C',
     paddingVertical: 18,
-    paddingHorizontal: 100,
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 30,
-    width: '100%',
+    justifyContent: 'center',
+    marginBottom: 25,
+    flexDirection: 'row',
   },
   verifyButtonDisabled: {
     backgroundColor: '#D0D0D0',
   },
   verifyButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  buttonIcon: {
+    marginLeft: 10,
   },
   resendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginBottom: 30,
   },
   resendText: {
     fontSize: 15,
@@ -258,9 +313,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#6B9AC4',
     fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   resendLinkDisabled: {
     color: '#D0D0D0',
+    textDecorationLine: 'none',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 8,
+  },
+  footerText: {
+    fontSize: 13,
+    color: '#999',
   },
 });
 
