@@ -117,7 +117,7 @@ const SpeechTherapyScreen = ({ onBack }) => {
           <Text style={styles.subtitle}>Choose the type of speech therapy you need</Text>
         </View>
 
-        {/* Therapy Cards */}
+        {/* Therapy Cards - Three Column Grid */}
         <View style={styles.cardsContainer}>
           {therapyTypes.map((therapy) => (
             <View key={therapy.id} style={styles.therapyCard}>
@@ -132,22 +132,24 @@ const SpeechTherapyScreen = ({ onBack }) => {
 
               {/* Card Content */}
               <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>{therapy.title}</Text>
-                <Text style={[styles.cardSubtitle, { color: therapy.color }]}>
-                  {therapy.subtitle}
-                </Text>
-                
-                <Text style={styles.cardDescription}>{therapy.description}</Text>
+                <View style={styles.cardTopContent}>
+                  <Text style={styles.cardTitle}>{therapy.title}</Text>
+                  <Text style={[styles.cardSubtitle, { color: therapy.color }]}>
+                    {therapy.subtitle}
+                  </Text>
+                  
+                  <Text style={styles.cardDescription}>{therapy.description}</Text>
 
-                {/* Program Features */}
-                <Text style={styles.featuresTitle}>PROGRAM FEATURES:</Text>
-                <View style={styles.featuresList}>
-                  {therapy.features.map((feature, index) => (
-                    <View key={index} style={styles.featureItem}>
-                      <View style={[styles.bullet, { backgroundColor: therapy.color }]} />
-                      <Text style={styles.featureText}>{feature}</Text>
-                    </View>
-                  ))}
+                  {/* Program Features */}
+                  <Text style={styles.featuresTitle}>KEY FEATURES:</Text>
+                  <View style={styles.featuresList}>
+                    {therapy.features.slice(0, 3).map((feature, index) => (
+                      <View key={index} style={styles.featureItem}>
+                        <Ionicons name="checkmark-circle" size={14} color={therapy.color} />
+                        <Text style={styles.featureText}>{feature}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
 
                 {/* Begin Assessment Button */}
@@ -156,7 +158,8 @@ const SpeechTherapyScreen = ({ onBack }) => {
                   onPress={() => handleBeginAssessment(therapy.type)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.assessmentButtonText}>BEGIN ASSESSMENT</Text>
+                  <Text style={styles.assessmentButtonText}>BEGIN</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -211,132 +214,152 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    paddingVertical: 30,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#7F8C8D',
     textAlign: 'center',
   },
 
-  // Cards Container
+  // Cards Container - Three Column Grid
   cardsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 20,
+    gap: 6,
   },
 
   // Therapy Card
   therapyCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginBottom: 20,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    minHeight: 660,
+    maxHeight: 660,
   },
 
   // Letter Badge
   letterBadgeContainer: {
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 15,
+    paddingBottom: 8,
+    backgroundColor: '#FAFAFA',
   },
   letterBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 3,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2.5,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   letterText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
   },
 
   // Card Content
   cardContent: {
-    padding: 20,
+    flex: 1,
+    padding: 10,
     paddingTop: 10,
+    justifyContent: 'space-between',
+  },
+  cardTopContent: {
+    flex: 1,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 6,
+    marginBottom: 4,
     textAlign: 'center',
   },
   cardSubtitle: {
-    fontSize: 11,
+    fontSize: 8,
     fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 15,
+    letterSpacing: 0.3,
+    marginBottom: 10,
     textAlign: 'center',
   },
   cardDescription: {
-    fontSize: 13,
+    fontSize: 10,
     color: '#555',
-    lineHeight: 20,
-    marginBottom: 20,
-    textAlign: 'left',
+    lineHeight: 15,
+    marginBottom: 12,
+    textAlign: 'justify',
   },
 
   // Features
   featuresTitle: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 8,
+    letterSpacing: 0.3,
   },
   featuresList: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
-    paddingLeft: 5,
-  },
-  bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 6,
-    marginRight: 10,
+    marginBottom: 6,
+    gap: 4,
   },
   featureText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 9,
     color: '#555',
-    lineHeight: 20,
+    lineHeight: 14,
+    textAlign: 'justify',
   },
 
   // Assessment Button
   assessmentButton: {
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   assessmentButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },

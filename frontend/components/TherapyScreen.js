@@ -137,19 +137,57 @@ const TherapyScreen = ({ onBack, onNavigate }) => {
                 onPress={() => handleTherapyPress(therapy)}
                 activeOpacity={0.7}
               >
-                <View style={styles.iconContainer}>
-                  <View style={styles.iconCircle}>
-                    <Image 
-                      source={therapy.icon} 
-                      style={styles.therapyIcon}
-                      resizeMode="contain"
-                    />
+                <View style={styles.cardContent}>
+                  <View style={styles.iconContainer}>
+                    <View style={[styles.iconCircle, therapy.id === 1 ? styles.physicalTherapyBorder : styles.speechTherapyBorder]}>
+                      <Image 
+                        source={therapy.icon} 
+                        style={styles.therapyIcon}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </View>
+                  <Text style={styles.therapyName}>{therapy.name}</Text>
+                  <View style={styles.tapHintContainer}>
+                    <Text style={styles.tapHint}>Tap to learn more</Text>
+                    <Ionicons name="arrow-forward-circle-outline" size={16} color="#7F8C8D" />
                   </View>
                 </View>
-                <Text style={styles.therapyName}>{therapy.name}</Text>
               </TouchableOpacity>
             </View>
           ))}
+        </View>
+
+        {/* Info Section */}
+        <View style={styles.infoSection}>
+          <View style={styles.infoCard}>
+            <Ionicons name="information-circle" size={24} color="#3498DB" />
+            <Text style={styles.infoText}>
+              Our professional therapists are here to help you achieve your health goals through personalized treatment plans.
+            </Text>
+          </View>
+
+          <View style={styles.benefitsSection}>
+            <Text style={styles.benefitsTitle}>Why Choose CVAPed?</Text>
+            <View style={styles.benefitsList}>
+              <View style={styles.benefitItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+                <Text style={styles.benefitText}>Expert Licensed Therapists</Text>
+              </View>
+              <View style={styles.benefitItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+                <Text style={styles.benefitText}>Physical Therapy for Stroke Patients</Text>
+              </View>
+              <View style={styles.benefitItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+                <Text style={styles.benefitText}>Speech Therapy for Pedia</Text>
+              </View>
+              <View style={styles.benefitItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+                <Text style={styles.benefitText}>Progress Tracking & Reports</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -253,24 +291,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
 
   // Title Section
   titleSection: {
     paddingHorizontal: 20,
-    paddingVertical: 30,
+    paddingTop: 20,
+    paddingBottom: 25,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#2C3E50',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#7F8C8D',
     textAlign: 'center',
   },
@@ -278,47 +320,131 @@ const styles = StyleSheet.create({
   // Therapy Grid
   therapyGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    gap: 30,
+    justifyContent: 'space-around',
+    paddingHorizontal: 15,
+    paddingVertical: 25,
+    backgroundColor: '#FFFFFF',
   },
   therapyItemContainer: {
-    width: '100%',
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 20,
+    marginHorizontal: 5,
+    maxWidth: '48%',
   },
   therapyCard: {
     alignItems: 'center',
-    marginBottom: 20,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  cardContent: {
+    alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   iconCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 5,
-    borderColor: '#C9302C',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 3,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  physicalTherapyBorder: {
+    borderColor: '#C9302C',
+  },
+  speechTherapyBorder: {
+    borderColor: '#6B9AC4',
   },
   therapyIcon: {
-    width: 200,
-    height: 200,
+    width: 130,
+    height: 130,
   },
   therapyName: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
     textAlign: 'center',
+    paddingHorizontal: 5,
+    marginBottom: 8,
+  },
+  tapHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tapHint: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    fontStyle: 'italic',
+  },
+
+  // Info Section
+  infoSection: {
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 20,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 20,
+    alignItems: 'flex-start',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3498DB',
+  },
+  infoText: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#2C3E50',
+    lineHeight: 20,
+  },
+  benefitsSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 18,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  benefitsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 15,
+  },
+  benefitsList: {
+    gap: 12,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: '#555',
+    flex: 1,
   },
 
   // Modal Styles

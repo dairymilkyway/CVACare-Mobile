@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,20 +10,18 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import GaitAnalysisScreen from './GaitAnalysisScreen';
 
 const { width } = Dimensions.get('window');
 
 const PhysicalTherapyScreen = ({ onBack }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
-  const cardAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const [showGaitAnalysis, setShowGaitAnalysis] = useState(false);
 
   useEffect(() => {
     // Fade in and slide up animation for header
@@ -39,50 +37,21 @@ const PhysicalTherapyScreen = ({ onBack }) => {
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Staggered animation for cards
-    const cardAnimations = cardAnims.map((anim, index) => 
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 500,
-        delay: index * 150,
-        useNativeDriver: true,
-      })
-    );
-
-    Animated.stagger(100, cardAnimations).start();
   }, []);
 
-  const services = [
-    {
-      id: 1,
-      icon: '💪',
-      title: 'Strength Building',
-      description: 'Targeted exercises to rebuild muscle strength and endurance',
-      color: '#FFD700',
-    },
-    {
-      id: 2,
-      icon: '🎯',
-      title: 'Pain Management',
-      description: 'Techniques to reduce and manage chronic or acute pain',
-      color: '#FF6B9D',
-    },
-    {
-      id: 3,
-      icon: '🔄',
-      title: 'Mobility Restoration',
-      description: 'Improve range of motion and functional movement',
-      color: '#4A90E2',
-    },
-    {
-      id: 4,
-      icon: '⚡',
-      title: 'Injury Recovery',
-      description: 'Comprehensive rehabilitation programs for faster recovery',
-      color: '#FFB347',
-    },
-  ];
+  const handleMobileDevice = () => {
+    // Navigate to mobile device gait analysis
+    setShowGaitAnalysis(true);
+  };
+
+  const handleWearableDevice = () => {
+    setShowComingSoonModal(true);
+  };
+
+  // If showing gait analysis, render that screen instead
+  if (showGaitAnalysis) {
+    return <GaitAnalysisScreen onBack={() => setShowGaitAnalysis(false)} />;
+  }
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -100,92 +69,151 @@ const PhysicalTherapyScreen = ({ onBack }) => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section with Animation */}
+        {/* Welcome Section with Animation */}
         <Animated.View 
           style={[
-            styles.headerSection,
+            styles.welcomeSection,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <Text style={styles.iconHeader}>🏃</Text>
-          <Text style={styles.mainTitle}>Physical Therapy</Text>
-          <Text style={styles.subtitle}>
-            Restore movement, reduce pain, and improve your physical function
+          <View style={styles.iconCircle}>
+            <Ionicons name="walk" size={50} color="#C9302C" />
+          </View>
+          <Text style={styles.welcomeTitle}>Welcome to Physical Therapy</Text>
+          <Text style={styles.welcomeSubtitle}>For Stroke Patients</Text>
+          <Text style={styles.welcomeDescription}>
+            CVAPed specializes in physical therapy designed specifically for stroke patients, 
+            with a primary focus on improving walking ability and gait rehabilitation.
           </Text>
         </Animated.View>
 
-        {/* Welcome Card */}
+        {/* Gait Analysis Info Card */}
         <Animated.View 
           style={[
-            styles.welcomeCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <Text style={styles.welcomeTitle}>Welcome to Physical Therapy Services</Text>
-          <Text style={styles.welcomeText}>
-            Our physical therapy program is designed to help you recover from injuries, manage chronic conditions, and enhance your overall mobility and quality of life.
-          </Text>
-        </Animated.View>
-
-        {/* Services Grid */}
-        <View style={styles.servicesGrid}>
-          {services.map((service, index) => (
-            <Animated.View
-              key={service.id}
-              style={[
-                styles.serviceCard,
-                {
-                  opacity: cardAnims[index],
-                  transform: [
-                    {
-                      translateY: cardAnims[index].interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [50, 0],
-                      }),
-                    },
-                    {
-                      scale: cardAnims[index].interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.9, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: service.color + '20' }]}>
-                <Text style={styles.serviceIcon}>{service.icon}</Text>
-              </View>
-              <Text style={styles.serviceTitle}>{service.title}</Text>
-              <Text style={styles.serviceDescription}>{service.description}</Text>
-            </Animated.View>
-          ))}
-        </View>
-
-        {/* Action Buttons */}
-        <Animated.View 
-          style={[
-            styles.actionButtons,
+            styles.infoCard,
             {
               opacity: fadeAnim,
             },
           ]}
         >
-          <TouchableOpacity style={styles.scheduleButton} activeOpacity={0.8}>
-            <Text style={styles.scheduleButtonText}>Schedule an Appointment</Text>
+          <View style={styles.infoHeader}>
+            <Ionicons name="analytics" size={28} color="#C9302C" />
+            <Text style={styles.infoTitle}>Let's Start with Gait Analysis</Text>
+          </View>
+          
+          <Text style={styles.infoDescription}>
+            Gait analysis is a systematic study of human walking patterns. It helps us:
+          </Text>
+
+          <View style={styles.benefitsList}>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+              <Text style={styles.benefitText}>Assess your current walking pattern</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+              <Text style={styles.benefitText}>Identify areas needing improvement</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+              <Text style={styles.benefitText}>Create personalized therapy plans</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#27AE60" />
+              <Text style={styles.benefitText}>Track progress over time</Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Device Selection Section */}
+        <Animated.View 
+          style={[
+            styles.deviceSection,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
+        >
+          <Text style={styles.deviceSectionTitle}>Choose Your Device</Text>
+          <Text style={styles.deviceSectionSubtitle}>Select how you'd like to perform the gait analysis</Text>
+
+          {/* Mobile Device Option */}
+          <TouchableOpacity 
+            style={styles.deviceCard}
+            onPress={handleMobileDevice}
+            activeOpacity={0.8}
+          >
+            <View style={styles.deviceIconContainer}>
+              <Ionicons name="phone-portrait" size={40} color="#C9302C" />
+            </View>
+            <View style={styles.deviceContent}>
+              <Text style={styles.deviceTitle}>Use My Mobile Device</Text>
+              <Text style={styles.deviceDescription}>
+                Use your smartphone's built-in sensors to perform gait analysis
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#C9302C" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.viewSessionsButton} activeOpacity={0.8}>
-            <Text style={styles.viewSessionsButtonText}>View My Sessions</Text>
+          {/* Wearable Device Option - Locked */}
+          <TouchableOpacity 
+            style={[styles.deviceCard, styles.lockedCard]}
+            onPress={handleWearableDevice}
+            activeOpacity={0.8}
+          >
+            <View style={styles.deviceIconContainer}>
+              <Ionicons name="watch" size={40} color="#95A5A6" />
+            </View>
+            <View style={styles.deviceContent}>
+              <View style={styles.titleWithBadge}>
+                <Text style={[styles.deviceTitle, styles.lockedText]}>Use Wearable Device</Text>
+                <View style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>COMING SOON</Text>
+                </View>
+              </View>
+              <Text style={[styles.deviceDescription, styles.lockedText]}>
+                Advanced gait analysis using specialized wearable sensors
+              </Text>
+            </View>
+            <Ionicons name="lock-closed" size={24} color="#95A5A6" />
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
+
+      {/* Coming Soon Modal */}
+      <Modal
+        visible={showComingSoonModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowComingSoonModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Ionicons name="construct" size={60} color="#F4A460" />
+            </View>
+            <Text style={styles.modalTitle}>Coming Soon!</Text>
+            <Text style={styles.modalDescription}>
+              We're currently working on the hardware integration for wearable devices. 
+              Our development team is creating specialized sensors that will provide 
+              even more accurate gait analysis data.
+            </Text>
+            <Text style={styles.modalNote}>
+              Stay tuned for updates!
+            </Text>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setShowComingSoonModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>Got It</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -231,142 +259,245 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  // Header Section
-  headerSection: {
+  // Welcome Section
+  welcomeSection: {
     alignItems: 'center',
     paddingVertical: 30,
     paddingHorizontal: 20,
-    backgroundColor: '#F5F5F5',
-  },
-  iconHeader: {
-    fontSize: 50,
-    marginBottom: 15,
-  },
-  mainTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#7F8C8D',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 10,
-  },
-
-  // Welcome Card
-  welcomeCard: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginVertical: 20,
-    padding: 20,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#C9302C',
-    elevation: 2,
-    shadowColor: '#000',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFE8E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 3,
+    shadowColor: '#C9302C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   welcomeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 12,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 22,
-  },
-
-  // Services Grid
-  servicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  serviceCard: {
-    width: (width - 60) / 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-  iconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  serviceIcon: {
-    fontSize: 36,
-  },
-  serviceTitle: {
-    fontSize: 15,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#2C3E50',
     marginBottom: 8,
     textAlign: 'center',
   },
-  serviceDescription: {
-    fontSize: 12,
-    color: '#666',
+  welcomeSubtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#C9302C',
+    marginBottom: 15,
     textAlign: 'center',
-    lineHeight: 18,
+  },
+  welcomeDescription: {
+    fontSize: 15,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 10,
   },
 
-  // Action Buttons
-  actionButtons: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    gap: 12,
-  },
-  scheduleButton: {
-    backgroundColor: '#C9302C',
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  scheduleButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  viewSessionsButton: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
+  // Info Card
+  infoCard: {
+    backgroundColor: '#F8F9FA',
+    marginHorizontal: 20,
+    marginVertical: 25,
+    padding: 20,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: '#C9302C',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 12,
+  },
+  infoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    flex: 1,
+  },
+  infoDescription: {
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 22,
+    marginBottom: 15,
+  },
+  benefitsList: {
+    gap: 12,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: '#555',
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  // Device Selection Section
+  deviceSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  deviceSectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  deviceSectionSubtitle: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+
+  // Device Cards
+  deviceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: '#C9302C',
+  },
+  lockedCard: {
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F9F9F9',
+  },
+  deviceIconContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+    backgroundColor: '#FFE8E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  deviceContent: {
+    flex: 1,
+  },
+  titleWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  deviceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  deviceDescription: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 20,
+  },
+  lockedText: {
+    color: '#95A5A6',
+  },
+  comingSoonBadge: {
+    backgroundColor: '#F4A460',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 15,
+  },
+  modalNote: {
+    fontSize: 14,
+    color: '#F4A460',
+    fontWeight: '600',
+    fontStyle: 'italic',
+    marginBottom: 25,
+  },
+  modalButton: {
+    backgroundColor: '#C9302C',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  viewSessionsButtonText: {
-    color: '#C9302C',
+  modalButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

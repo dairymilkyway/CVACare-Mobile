@@ -11,6 +11,7 @@ connectDB();
 
 // Route files
 const authRoutes = require('./routes/authRoutes');
+const gaitRoutes = require('./routes/gaitRoutes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(cors());
 
 // Mount routers
 app.use('/api/auth', authRoutes);
+app.use('/api/gait', gaitRoutes);
 
 // Health check route
 app.get('/', (req, res) => {
